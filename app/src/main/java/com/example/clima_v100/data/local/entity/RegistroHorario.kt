@@ -21,8 +21,9 @@ data class RegistroHorario(
     var id: Int = 0,
     @ColumnInfo(name = "registro_clima_id")
     var registroClimaId: Int,
-    var fecha: String,
-    var ubicacion: String,
-    var hora: Int,
-    var temperatura: Float
+    var hour: Int,             // 0-23 (hour of day)
+    @ColumnInfo(name = "temp_fahrenheit")
+    var tempFahrenheit: Float,
+    @ColumnInfo(name = "temp_celsius")
+    var tempCelsius: Float
 )

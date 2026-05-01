@@ -7,19 +7,23 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "registro_clima",
-    indices = [Index(value = ["fecha", "ubicacion"], unique = true)]
+    indices = [Index(value = ["date", "city", "region", "country"], unique = true)]
 )
 data class RegistroClima(
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0,
-    var fecha: String,
-    var ubicacion: String,
-    @ColumnInfo(name = "temp_max_fareh")
-    var tempMaxFareh: Float,
-    @ColumnInfo(name = "temp_min_fareh")
-    var tempMinFareh: Float,
-    @ColumnInfo(name = "temp_max_cent")
-    var tempMaxCent: Float,
-    @ColumnInfo(name = "temp_min_cent")
-    var tempMinCent: Float
+    var date: String,           // YYYY-MM-DD format (UTC)
+    var city: String,
+    var region: String,         // State/Province
+    var country: String,
+    var latitude: Double? = null,
+    var longitude: Double? = null,
+    @ColumnInfo(name = "temp_max_fahrenheit")
+    var maxTempFahrenheit: Float,
+    @ColumnInfo(name = "temp_min_fahrenheit")
+    var minTempFahrenheit: Float,
+    @ColumnInfo(name = "temp_max_celsius")
+    var maxTempCelsius: Float,
+    @ColumnInfo(name = "temp_min_celsius")
+    var minTempCelsius: Float
 )

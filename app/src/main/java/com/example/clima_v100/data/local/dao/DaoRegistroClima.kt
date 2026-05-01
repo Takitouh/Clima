@@ -1,6 +1,10 @@
 package com.example.clima_v100.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import com.example.clima_v100.data.local.entity.RegistroClima
 
 @Dao
@@ -14,9 +18,22 @@ interface DaoRegistroClima {
     @Update
     suspend fun actualizar(registro: RegistroClima): Int
 
-    @Delete
+    @Query("DELETE FROM registro_clima WHERE id = :id")
     suspend fun eliminar(id: Int): Int
-    
-    @Query("SELECT rc.* FROM registro_clima rc WHERE rc.fecha = :fecha AND rc.ubicacion = :ubicacion")
-    suspend fun obtenerPorFechaYUbicacion(fecha: String, ubicacion: String): RegistroClima?
+
+    /**
+     * Retrieves a weather record by date, city, region, and country.
+     * @param date Date in YYYY-MM-DD format
+     * @param city City name
+     * @param region State/Province
+     * @param country Country name
+     * @return RegistroClima if found, null otherwise
+     */
+    @Query("SELECT * FROM registro_clima WHERE date = :date AND city = :city AND region = :region AND country = :country")
+    suspend fun obtenerPorFechaYCiudadRegionPais(
+        date: String,
+        city: String,
+        region: String,
+        country: String
+    ): RegistroClima?
 }

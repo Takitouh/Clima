@@ -1,6 +1,10 @@
 package com.example.clima_v100.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import com.example.clima_v100.data.local.entity.PreferenciaUsuario
 
 @Dao
@@ -14,6 +18,6 @@ interface DaoPreferenciaUsuario {
     @Update
     suspend fun actualizar(preferencia: PreferenciaUsuario): Int
 
-    @Delete
+    @Query("DELETE FROM preferencias_usuario WHERE id = :id")
     suspend fun eliminar(id: Int): Int
 }

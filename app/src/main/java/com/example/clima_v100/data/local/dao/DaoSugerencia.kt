@@ -1,6 +1,10 @@
 package com.example.clima_v100.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import com.example.clima_v100.data.local.entity.Sugerencia
 
 @Dao
@@ -14,6 +18,6 @@ interface DaoSugerencia {
     @Update
     suspend fun actualizar(sugerencia: Sugerencia): Int
 
-    @Delete
+    @Query("DELETE FROM sugerencia WHERE id = :id")
     suspend fun eliminar(id: Int): Int
 }
