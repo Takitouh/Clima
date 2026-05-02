@@ -4,12 +4,21 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/**
+ * User preference singleton entity.
+ * Only ONE record should exist in the database (enforced at ID = 1).
+ *
+ * Singleton Pattern:
+ * - Always uses id = 1 to ensure only one preference record exists
+ * - When updating, the database replaces the existing record
+ * - When inserting with REPLACE strategy, it overwrites the record at id=1
+ */
 @Entity(tableName = "preferencias_usuario")
 data class PreferenciaUsuario(
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0,
-    @ColumnInfo(name = "medida_temp_fav")
-    var medidaTempFav: String = "C",
-    @ColumnInfo(name = "formato_militar")
-    var formatoMilitar: Boolean = false
+    @PrimaryKey
+    var id: Int = 1,  // FIXED to 1 - only one record per app
+    @ColumnInfo(name = "fav_temp_scale")
+    var favTempScale: String = "C",
+    @ColumnInfo(name = "is_24_hour_format")
+    var is24HourFormat: Boolean = false
 )

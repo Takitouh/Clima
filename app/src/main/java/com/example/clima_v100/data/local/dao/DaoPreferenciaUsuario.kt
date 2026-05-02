@@ -9,15 +9,25 @@ import com.example.clima_v100.data.local.entity.PreferenciaUsuario
 
 @Dao
 interface DaoPreferenciaUsuario {
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    /**
+     * Insert or replace preference record.
+     * With OnConflictStrategy.REPLACE, this overwrites the existing record at id=1.
+     * Maintains singleton pattern - only one record exists.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(preferencia: PreferenciaUsuario): Long
 
-    @Query("SELECT * FROM preferencias_usuario")
-    suspend fun obtenerTodos(): List<PreferenciaUsuario>
+    /**
+     * Get the singleton preference record (always id=1).
+     * Returns null if preferences not initialized yet.
+     * This is the preferred method for singleton access.
+     */
+    @Query("SELECT * FROM preferencias_usuario WHERE id = 1")
+    suspend fun obtenerPreferencia(): PreferenciaUsuario?
 
+    /**
+     * Update the singleton preference record.
+     */
     @Update
     suspend fun actualizar(preferencia: PreferenciaUsuario): Int
-
-    @Query("DELETE FROM preferencias_usuario WHERE id = :id")
-    suspend fun eliminar(id: Int): Int
 }
