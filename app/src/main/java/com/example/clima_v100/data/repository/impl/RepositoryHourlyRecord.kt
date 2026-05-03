@@ -2,18 +2,18 @@ package com.example.clima_v100.data.repository.impl
 
 import android.util.Log
 import com.example.clima_v100.BuildConfig
-import com.example.clima_v100.data.local.dao.DaoRegistroHorario
+import com.example.clima_v100.data.local.dao.HourlyRecordDao
 import com.example.clima_v100.data.local.dto.LocationInfo
-import com.example.clima_v100.data.local.entity.RegistroHorario
+import com.example.clima_v100.data.local.entity.HourlyRecord
 import com.example.clima_v100.data.remote.WeatherApiService
-import com.example.clima_v100.data.repository.IRepositoryRegistroClima
-import com.example.clima_v100.data.repository.IRepositoryRegistroHorario
+import com.example.clima_v100.data.repository.IRepositoryDiaryRecord
+import com.example.clima_v100.data.repository.IRepositoryHourlyRecord
 import com.example.clima_v100.data.repository.utils.TimeUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Implementation of IRepositoryRegistroHorario.
+ * Implementation of IRepositoryHourlyRecord.
  * Handles hourly weather record management with database and API operations.
  * Provides current weather fetching and hourly record persistence.
  *
@@ -21,14 +21,14 @@ import kotlinx.coroutines.withContext
  * - fetchAndSaveCurrentWeather(): Main entry point for current weather (orchestrator method)
  * - Standard CRUD operations for hourly records
  */
-class RepositoryRegistroHorario(
-    private val daoRegistroHorario: DaoRegistroHorario,
+class RepositoryHourlyRecord(
+    private val hourlyRecordDao: HourlyRecordDao,
     private val weatherApiService: WeatherApiService,
-    private val repositoryRegistroClima: IRepositoryRegistroClima
-) : IRepositoryRegistroHorario {
+    private val repositoryDiaryRecord: IRepositoryDiaryRecord
+) : IRepositoryHourlyRecord {
 
     companion object {
-        private const val TAG = "RepositoryRegistroHorario"
+        private const val TAG = "RepositoryHourlyRecord"
     }
 
     /**
@@ -71,16 +71,16 @@ class RepositoryRegistroHorario(
      * Smart upsert logic: only updates if temperatures differ.
      *
      * Process:
-     * 1. Fetches today's RegistroClima (creates if needed)
+     * 1. Fetches today's DiaryRecord (creates if needed)
      * 2. Queries current weather API with lat/lon
      * 3. Extracts hour from API's localtime
      * 4. Checks if record exists for this hour
      *    - If exists & temps identical: no action
      *    - If exists & temps changed: UPDATE
      *    - If not exists: INSERT
-     * 5. Returns the stored RegistroHorario
+     * 5. Returns the stored HourlyRecord
      */
-    override suspend fun fetchAndSaveCurrentWeather(locationInfo: LocationInfo): RegistroHorario? {
+    override suspend fun fetchAndSaveCurrentWeather(locationInfo: LocationInfo): HourlyRecord? {
         return withContext(Dispatchers.IO) {
             try {
                 val today = TimeUtil.getCurrentUtcDate()
@@ -89,33 +89,33 @@ class RepositoryRegistroHorario(
                     "fetchAndSaveCurrentWeather: city=${locationInfo.city}, region=${locationInfo.region}, country=${locationInfo.country}, date=$today"
                 )
 
-                // Step 1: Ensure today's RegistroClima exists (create if needed)
-                Log.d(TAG, "Fetching or creating today's RegistroClima record")
-                val weatherRecord = repositoryRegistroClima.obtainOrFetchHistoricalWeather(
+                // Step 1: Ensure today's DiaryRecord exists (create if needed)
+                Log.d(TAG, "Fetching or creating today's DiaryRecord record")
+                val weatherRecord = repositoryDiaryRecord.obtainOrFetchHistoricalWeather(
                     date = today,
                     city = locationInfo.city,
                     region = locationInfo.region,
                     country = locationInfo.country
                 )
                     ?: run {
-                        Log.e(TAG, "Failed to obtain or fetch RegistroClima for today")
+                        Log.e(TAG, "Failed to obtain or fetch DiaryRecord for today")
                         return@withContext null
                     }
 
-                // Step 2: Get the RegistroClima ID from database
-                val registroClima = repositoryRegistroClima.obtainByDateAndLocation(
+                // Step 2: Get the DiaryRecord ID from database
+                val diaryRecord = repositoryDiaryRecord.obtainByDateAndLocation(
                     date = today,
                     city = locationInfo.city,
                     region = locationInfo.region,
                     country = locationInfo.country
                 )
-                val registroClimaId = registroClima?.id
+                val diaryRecordId = diaryRecord?.id
                     ?: run {
-                        Log.e(TAG, "Could not resolve RegistroClima ID for today")
+                        Log.e(TAG, "Could not resolve DiaryRecord ID for today")
                         return@withContext null
                     }
 
-                Log.d(TAG, "RegistroClima ID resolved: $registroClimaId")
+                Log.d(TAG, "DiaryRecord ID resolved: $diaryRecordId")
 
                 // Step 3: Fetch current weather from API using lat/lon coordinates
                 val query = "${locationInfo.latitude},${locationInfo.longitude}"
@@ -133,8 +133,8 @@ class RepositoryRegistroHorario(
                 Log.d(TAG, "Extracted current hour from API: $currentHour")
 
                 // Step 5: Check if hourly record exists for this hour
-                val existingRecord = daoRegistroHorario.obtenerPorRegistroClimaIdYHora(
-                    registroClimaId,
+                val existingRecord = hourlyRecordDao.getByDiaryRegisterIdAndHour(
+                    diaryRecordId,
                     currentHour
                 )
 
@@ -157,7 +157,7 @@ class RepositoryRegistroHorario(
                             tempFahrenheit = apiTempFahrenheit,
                             tempCelsius = apiTempCelsius
                         )
-                        daoRegistroHorario.actualizar(updated)
+                        hourlyRecordDao.update(updated)
                         Log.d(TAG, "Hourly record updated for hour $currentHour")
                         updated
                     } else {
@@ -170,13 +170,13 @@ class RepositoryRegistroHorario(
                         TAG,
                         "No existing record for hour $currentHour. Inserting new hourly record"
                     )
-                    val newRecord = RegistroHorario(
-                        registroClimaId = registroClimaId,
+                    val newRecord = HourlyRecord(
+                        diaryRecordId = diaryRecordId,
                         hour = currentHour,
                         tempFahrenheit = apiTempFahrenheit,
                         tempCelsius = apiTempCelsius
                     )
-                    val insertedId = daoRegistroHorario.insertar(newRecord)
+                    val insertedId = hourlyRecordDao.insert(newRecord)
                     Log.d(TAG, "Hourly record inserted with ID: $insertedId for hour $currentHour")
                     newRecord.copy(id = insertedId.toInt())
                 }
@@ -190,15 +190,15 @@ class RepositoryRegistroHorario(
     /**
      * Inserts a new hourly weather record into the database.
      */
-    override suspend fun insertarRegistroHorario(registroHorario: RegistroHorario): Long {
+    override suspend fun insert(hourlyRecord: HourlyRecord): Long {
         return withContext(Dispatchers.IO) {
             try {
-                validateHour(registroHorario.hour)
+                validateHour(hourlyRecord.hour)
                 Log.d(
                     TAG,
-                    "Inserting hourly record for hour ${registroHorario.hour} in RegistroClima ${registroHorario.registroClimaId}"
+                    "Inserting hourly record for hour ${hourlyRecord.hour} in DiaryRecord ${hourlyRecord.diaryRecordId}"
                 )
-                val insertedId = daoRegistroHorario.insertar(registroHorario)
+                val insertedId = hourlyRecordDao.insert(hourlyRecord)
                 Log.d(TAG, "Hourly record inserted successfully with ID: $insertedId")
                 return@withContext insertedId
             } catch (exception: Exception) {
@@ -211,20 +211,20 @@ class RepositoryRegistroHorario(
     /**
      * Retrieves all hourly records for a specific day.
      */
-    override suspend fun obtenerRegistrosHorariosDelDia(registroClimaId: Int): List<RegistroHorario> {
+    override suspend fun obtainDailyHourlyRecords(diaryRecordId: Int): List<HourlyRecord> {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Fetching all hourly records for RegistroClima: $registroClimaId")
-                val records = daoRegistroHorario.obtenerPorRegistroClimaId(registroClimaId)
+                Log.d(TAG, "Fetching all hourly records for DiaryRecord: $diaryRecordId")
+                val records = hourlyRecordDao.getByDiaryRegisterId(diaryRecordId)
                 Log.d(
                     TAG,
-                    "Retrieved ${records.size} hourly record(s) for RegistroClima: $registroClimaId"
+                    "Retrieved ${records.size} hourly record(s) for DiaryRecord: $diaryRecordId"
                 )
                 return@withContext records
             } catch (exception: Exception) {
                 Log.e(
                     TAG,
-                    "Error fetching hourly records for RegistroClima: ${exception.message}",
+                    "Error fetching hourly records for DiaryRecord: ${exception.message}",
                     exception
                 )
                 throw exception
@@ -235,16 +235,16 @@ class RepositoryRegistroHorario(
     /**
      * Retrieves a specific hourly record by day and hour.
      */
-    override suspend fun obtenerRegistroHorario(registroClimaId: Int, hour: Int): RegistroHorario? {
+    override suspend fun obtainHourlyRecord(diaryRecordId: Int, hour: Int): HourlyRecord? {
         return withContext(Dispatchers.IO) {
             try {
                 validateHour(hour)
                 Log.d(
                     TAG,
-                    "Fetching hourly record for RegistroClima: $registroClimaId, hour: $hour"
+                    "Fetching hourly record for DiaryRecord: $diaryRecordId, hour: $hour"
                 )
                 val record =
-                    daoRegistroHorario.obtenerPorRegistroClimaIdYHora(registroClimaId, hour)
+                    hourlyRecordDao.getByDiaryRegisterIdAndHour(diaryRecordId, hour)
                 if (record != null) {
                     Log.d(
                         TAG,
@@ -264,12 +264,12 @@ class RepositoryRegistroHorario(
     /**
      * Updates an existing hourly record.
      */
-    override suspend fun actualizarRegistroHorario(registroHorario: RegistroHorario): Int {
+    override suspend fun update(hourlyRecord: HourlyRecord): Int {
         return withContext(Dispatchers.IO) {
             try {
-                validateHour(registroHorario.hour)
-                Log.d(TAG, "Updating hourly record ID: ${registroHorario.id}")
-                val updatedCount = daoRegistroHorario.actualizar(registroHorario)
+                validateHour(hourlyRecord.hour)
+                Log.d(TAG, "Updating hourly record ID: ${hourlyRecord.id}")
+                val updatedCount = hourlyRecordDao.update(hourlyRecord)
                 Log.d(TAG, "Updated $updatedCount hourly record(s)")
                 return@withContext updatedCount
             } catch (exception: Exception) {
@@ -282,11 +282,11 @@ class RepositoryRegistroHorario(
     /**
      * Deletes an hourly record by ID.
      */
-    override suspend fun eliminarRegistroHorario(id: Int): Int {
+    override suspend fun delete(id: Int): Int {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Deleting hourly record with ID: $id")
-                val deletedCount = daoRegistroHorario.eliminar(id)
+                val deletedCount = hourlyRecordDao.delete(id)
                 Log.d(TAG, "Deleted $deletedCount hourly record(s)")
                 return@withContext deletedCount
             } catch (exception: Exception) {
@@ -299,11 +299,11 @@ class RepositoryRegistroHorario(
     /**
      * Retrieves all hourly records from entire database.
      */
-    override suspend fun obtenerTodos(): List<RegistroHorario> {
+    override suspend fun obtainAll(): List<HourlyRecord> {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Fetching all hourly records from database")
-                val records = daoRegistroHorario.obtenerTodos()
+                val records = hourlyRecordDao.getAll()
                 Log.d(TAG, "Retrieved ${records.size} total hourly record(s)")
                 return@withContext records
             } catch (exception: Exception) {

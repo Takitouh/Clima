@@ -2,17 +2,17 @@ package com.example.clima_v100.data.repository.impl
 
 import android.util.Log
 import com.example.clima_v100.BuildConfig
-import com.example.clima_v100.data.local.dao.DaoRegistroClima
+import com.example.clima_v100.data.local.dao.DiaryRecordDao
 import com.example.clima_v100.data.local.dto.WeatherRecordDto
-import com.example.clima_v100.data.local.entity.RegistroClima
+import com.example.clima_v100.data.local.entity.DiaryRecord
 import com.example.clima_v100.data.remote.WeatherApiService
-import com.example.clima_v100.data.repository.IRepositoryRegistroClima
+import com.example.clima_v100.data.repository.IRepositoryDiaryRecord
 import com.example.clima_v100.data.repository.utils.TimeUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Implementation of IRepositoryRegistroClima.
+ * Implementation of IRepositoryDiaryRecord.
  * Handles weather record management with database and API operations.
  * Implements atomic transactions for data consistency.
  *
@@ -21,13 +21,13 @@ import kotlinx.coroutines.withContext
  * - fetchHistoricalWeatherFromApi(): Pure API fetch with database persistence
  * - obtainOrFetchHistoricalWeather(): Orchestrator that combines both
  */
-class RepositoryRegistroClima(
-    private val daoRegistroClima: DaoRegistroClima,
+class RepositoryDiaryRecord(
+    private val diaryRecordDao: DiaryRecordDao,
     private val weatherApiService: WeatherApiService
-) : IRepositoryRegistroClima {
+) : IRepositoryDiaryRecord {
 
     companion object {
-        private const val TAG = "RepositoryRegistroClima"
+        private const val TAG = "RepositoryDiaryRecord"
     }
 
     /**
@@ -44,21 +44,21 @@ class RepositoryRegistroClima(
     }
 
     /**
-     * Converts a RegistroClima entity to a WeatherRecordDto (without ID).
+     * Converts a DiaryRecord entity to a WeatherRecordDto (without ID).
      * Useful for returning clean data from use cases.
      */
-    private fun toWeatherRecordDto(registroClima: RegistroClima): WeatherRecordDto {
+    private fun toWeatherRecordDto(diaryRecord: DiaryRecord): WeatherRecordDto {
         return WeatherRecordDto(
-            date = registroClima.date,
-            city = registroClima.city,
-            region = registroClima.region,
-            country = registroClima.country,
-            latitude = registroClima.latitude,
-            longitude = registroClima.longitude,
-            maxTempFahrenheit = registroClima.maxTempFahrenheit,
-            minTempFahrenheit = registroClima.minTempFahrenheit,
-            maxTempCelsius = registroClima.maxTempCelsius,
-            minTempCelsius = registroClima.minTempCelsius
+            date = diaryRecord.date,
+            city = diaryRecord.city,
+            region = diaryRecord.region,
+            country = diaryRecord.country,
+            latitude = diaryRecord.latitude,
+            longitude = diaryRecord.longitude,
+            maxTempFahrenheit = diaryRecord.maxTempFahrenheit,
+            minTempFahrenheit = diaryRecord.minTempFahrenheit,
+            maxTempCelsius = diaryRecord.maxTempCelsius,
+            minTempCelsius = diaryRecord.minTempCelsius
         )
     }
 
@@ -80,7 +80,7 @@ class RepositoryRegistroClima(
                     "Querying database for weather record: date=$date, city=$city, region=$region, country=$country"
                 )
                 val record =
-                    daoRegistroClima.obtenerPorFechaYCiudadRegionPais(date, city, region, country)
+                    diaryRecordDao.getByDateCityRegionCountry(date, city, region, country)
 
                 if (record != null) {
                     Log.d(
@@ -133,7 +133,7 @@ class RepositoryRegistroClima(
                     ?: throw Exception("No forecast data received from API for $date")
 
                 val dayData = forecastDay.day
-                val registroClima = RegistroClima(
+                val diaryRecord = DiaryRecord(
                     date = TimeUtil.extractDateFromUtcDateTime(forecastDay.date),
                     city = city,
                     region = region,
@@ -147,14 +147,14 @@ class RepositoryRegistroClima(
                 )
 
                 // Save to database (atomic operation)
-                val insertedId = daoRegistroClima.insertar(registroClima)
+                val insertedId = diaryRecordDao.insert(diaryRecord)
                 Log.d(
                     TAG,
                     "Weather data successfully saved to database with ID: $insertedId for $date in $city, $country"
                 )
 
                 // Return as DTO (without ID, following separation of concerns)
-                return@withContext toWeatherRecordDto(registroClima)
+                return@withContext toWeatherRecordDto(diaryRecord)
             } catch (exception: Exception) {
                 Log.e(
                     TAG,
@@ -213,14 +213,14 @@ class RepositoryRegistroClima(
     /**
      * Inserts a new weather record into the database.
      */
-    override suspend fun insert(registroClima: RegistroClima): Long {
+    override suspend fun insert(diaryRecord: DiaryRecord): Long {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(
                     TAG,
-                    "Inserting weather record for ${registroClima.date} in ${registroClima.city}, ${registroClima.country}"
+                    "Inserting weather record for ${diaryRecord.date} in ${diaryRecord.city}, ${diaryRecord.country}"
                 )
-                val insertedId = daoRegistroClima.insertar(registroClima)
+                val insertedId = diaryRecordDao.insert(diaryRecord)
                 Log.d(TAG, "Record inserted successfully with ID: $insertedId")
                 return@withContext insertedId
             } catch (exception: Exception) {
@@ -233,11 +233,11 @@ class RepositoryRegistroClima(
     /**
      * Retrieves all weather records from the database.
      */
-    override suspend fun obtainAll(): List<RegistroClima> {
+    override suspend fun obtainAll(): List<DiaryRecord> {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Fetching all weather records from database")
-                val records = daoRegistroClima.obtenerTodos()
+                val records = diaryRecordDao.getAll()
                 Log.d(TAG, "Retrieved ${records.size} weather records")
                 return@withContext records
             } catch (exception: Exception) {
@@ -250,11 +250,11 @@ class RepositoryRegistroClima(
     /**
      * Updates an existing weather record in the database.
      */
-    override suspend fun update(registroClima: RegistroClima): Int {
+    override suspend fun update(diaryRecord: DiaryRecord): Int {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Updating weather record ID: ${registroClima.id}")
-                val updatedCount = daoRegistroClima.actualizar(registroClima)
+                Log.d(TAG, "Updating weather record ID: ${diaryRecord.id}")
+                val updatedCount = diaryRecordDao.update(diaryRecord)
                 Log.d(TAG, "Updated $updatedCount record(s)")
                 return@withContext updatedCount
             } catch (exception: Exception) {
@@ -271,7 +271,7 @@ class RepositoryRegistroClima(
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Deleting weather record with ID: $id")
-                val deletedCount = daoRegistroClima.eliminar(id)
+                val deletedCount = diaryRecordDao.delete(id)
                 Log.d(TAG, "Deleted $deletedCount record(s)")
                 return@withContext deletedCount
             } catch (exception: Exception) {
@@ -289,12 +289,12 @@ class RepositoryRegistroClima(
         city: String,
         region: String,
         country: String
-    ): RegistroClima? {
+    ): DiaryRecord? {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Fetching weather record for $date in $city, $region, $country")
                 val record =
-                    daoRegistroClima.obtenerPorFechaYCiudadRegionPais(date, city, region, country)
+                    diaryRecordDao.getByDateCityRegionCountry(date, city, region, country)
                 if (record != null) {
                     Log.d(TAG, "Record found with ID: ${record.id}")
                 } else {

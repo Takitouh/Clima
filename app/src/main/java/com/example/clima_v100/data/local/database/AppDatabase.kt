@@ -4,25 +4,31 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.clima_v100.data.local.dao.*
-import com.example.clima_v100.data.local.entity.*
+import com.example.clima_v100.data.local.dao.DiaryRecordDao
+import com.example.clima_v100.data.local.dao.HourlyRecordDao
+import com.example.clima_v100.data.local.dao.SuggestionDao
+import com.example.clima_v100.data.local.dao.UserPreferenceDao
+import com.example.clima_v100.data.local.entity.DiaryRecord
+import com.example.clima_v100.data.local.entity.HourlyRecord
+import com.example.clima_v100.data.local.entity.Suggestion
+import com.example.clima_v100.data.local.entity.UserPreference
 
 @Database(
     entities = [
-        PreferenciaUsuario::class,
-        RegistroClima::class,
-        RegistroHorario::class,
-        Sugerencia::class
+        UserPreference::class,
+        DiaryRecord::class,
+        HourlyRecord::class,
+        Suggestion::class
     ],
     version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun daoPreferenciaUsuario(): DaoPreferenciaUsuario
-    abstract fun daoRegistroClima(): DaoRegistroClima
-    abstract fun daoRegistroHorario(): DaoRegistroHorario
-    abstract fun daoSugerencia(): DaoSugerencia
+    abstract fun userPreferenceDao(): UserPreferenceDao
+    abstract fun diaryRegisterDao(): DiaryRecordDao
+    abstract fun hourlyRegisterDao(): HourlyRecordDao
+    abstract fun suggestionDao(): SuggestionDao
 
     companion object {
         @Volatile

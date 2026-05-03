@@ -6,10 +6,10 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "registro_clima",
+    tableName = "diary_record",
     indices = [Index(value = ["date", "city", "region", "country"], unique = true)]
 )
-data class RegistroClima(
+data class DiaryRecord(
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0,
     var date: String,           // YYYY-MM-DD format (UTC)

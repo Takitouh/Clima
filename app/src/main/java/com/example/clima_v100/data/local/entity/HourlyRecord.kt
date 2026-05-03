@@ -6,21 +6,21 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "registro_horario",
+    tableName = "hourly_record",
     foreignKeys = [
         ForeignKey(
-            entity = RegistroClima::class,
+            entity = DiaryRecord::class,
             parentColumns = ["id"],
-            childColumns = ["registro_clima_id"],
+            childColumns = ["diary_record_id"],
             onDelete = ForeignKey.CASCADE
         )
     ]
 )
-data class RegistroHorario(
+data class HourlyRecord(
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0,
-    @ColumnInfo(name = "registro_clima_id")
-    var registroClimaId: Int,
+    @ColumnInfo(name = "diary_record_id")
+    var diaryRecordId: Int,
     var hour: Int,             // 0-23 (hour of day)
     @ColumnInfo(name = "temp_fahrenheit")
     var tempFahrenheit: Float,

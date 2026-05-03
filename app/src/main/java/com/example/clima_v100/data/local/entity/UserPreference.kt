@@ -13,8 +13,8 @@ import androidx.room.PrimaryKey
  * - When updating, the database replaces the existing record
  * - When inserting with REPLACE strategy, it overwrites the record at id=1
  */
-@Entity(tableName = "preferencias_usuario")
-data class PreferenciaUsuario(
+@Entity(tableName = "user_preference")
+data class UserPreference(
     @PrimaryKey
     var id: Int = 1,  // FIXED to 1 - only one record per app
     @ColumnInfo(name = "fav_temp_scale")

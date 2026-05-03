@@ -1,13 +1,13 @@
 package com.example.clima_v100.data.repository
 
 import com.example.clima_v100.data.local.dto.WeatherRecordDto
-import com.example.clima_v100.data.local.entity.RegistroClima
+import com.example.clima_v100.data.local.entity.DiaryRecord
 
 /**
- * Repository interface for RegistroClima operations.
+ * Repository interface for DiaryRecord operations.
  * Defines contract for weather record management, including database operations and API interactions.
  */
-interface IRepositoryRegistroClima {
+interface IRepositoryDiaryRecord {
 
     /**
      * Retrieves historical weather data from the local database.
@@ -72,28 +72,28 @@ interface IRepositoryRegistroClima {
     /**
      * Inserts a new weather record into the database.
      *
-     * @param registroClima RegistroClima object to insert
+     * @param diaryRecord DiaryRecord object to insert
      * @return ID of the inserted record
      * @throws Exception if database operation fails
      */
-    suspend fun insert(registroClima: RegistroClima): Long
+    suspend fun insert(diaryRecord: DiaryRecord): Long
 
     /**
      * Retrieves all weather records from the database.
      *
-     * @return List of all RegistroClima records
+     * @return List of all DiaryRecord records
      * @throws Exception if database operation fails
      */
-    suspend fun obtainAll(): List<RegistroClima>
+    suspend fun obtainAll(): List<DiaryRecord>
 
     /**
      * Updates an existing weather record in the database.
      *
-     * @param registroClima RegistroClima object with updated data
+     * @param diaryRecord DiaryRecord object with updated data
      * @return Number of records updated
      * @throws Exception if database operation fails
      */
-    suspend fun update(registroClima: RegistroClima): Int
+    suspend fun update(diaryRecord: DiaryRecord): Int
 
     /**
      * Deletes a weather record from the database by ID.
@@ -111,7 +111,7 @@ interface IRepositoryRegistroClima {
      * @param city City name
      * @param region State/Province
      * @param country Country name
-     * @return RegistroClima object if found, null otherwise
+     * @return DiaryRecord object if found, null otherwise
      * @throws Exception if database operation fails
      */
     suspend fun obtainByDateAndLocation(
@@ -119,5 +119,5 @@ interface IRepositoryRegistroClima {
         city: String,
         region: String,
         country: String
-    ): RegistroClima?
+    ): DiaryRecord?
 }
